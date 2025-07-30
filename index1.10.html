@@ -14,6 +14,8 @@
   <!-- FileSaver for Word export -->
   <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
   <style>
+    /* ... (igual a tu CSS previo) ... */
+    /* Usa el CSS de tu último ejemplo */
     :root {
       --morado: #7c3aed;
       --morado-dark: #4c2284;
@@ -31,305 +33,47 @@
       margin: 0;
       padding: 0;
     }
-    .topbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      background: linear-gradient(90deg, var(--morado-dark) 0%, var(--morado) 100%);
-      z-index: 1000;
-      height: 80px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 12px rgba(124,58,237,0.12);
-    }
-    .topbar-logo {
-      height: 50px;
-      margin-right: 1.2rem;
-      border-radius: 10px;
-      background: var(--blanco);
-      box-shadow: 0 2px 8px rgba(76,34,132,0.10);
-      padding: 4px;
-    }
-    .container {
-      background: var(--blanco);
-      max-width: 900px;
-      margin: 120px auto 2rem auto;
-      border-radius: 15px;
-      box-shadow: 0 4px 18px rgba(124,58,237,0.18);
-      padding: 2rem 2.5rem;
-    }
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 2rem;
-    }
-    .header img {
-      height: 60px;
-      margin-right: 1.2rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(124,58,237,0.12);
-      background: var(--blanco);
-      padding: 4px;
-    }
-    .header-title {
-      color: var(--morado-dark);
-      font-size: 2.2rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-shadow: 0 2px 10px rgba(76,34,132,0.06);
-      margin: 0;
-    }
-    h1 {
-      display: none;
-    }
-    form {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.2rem 2rem;
-      margin-bottom: 2rem;
-    }
-    .form-row {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-    }
-    label {
-      font-size: 1.05rem;
-      margin-bottom: 0.35rem;
-      color: var(--morado-dark);
-      font-weight: 600;
-    }
-    input, select {
-      padding: 0.5rem;
-      border: 1px solid var(--morado);
-      border-radius: 6px;
-      font-size: 1rem;
-      background: var(--gris-claro);
-      transition: border-color .2s;
-      color: var(--negro);
-      width: 100%;
-      box-sizing: border-box;
-    }
-    input:focus, select:focus {
-      border-color: var(--negro);
-      outline: none;
-    }
-    .input-group {
-      display: flex;
-      align-items: center;
-      width: 100%;
-    }
-    .input-group input {
-      flex: 1;
-      min-width: 0;
-      width: 100%;
-    }
-    .input-group span {
-      margin-left: 0.4rem;
-      color: var(--morado-dark);
-      font-weight: bold;
-      font-size: 1rem;
-    }
-    .btn {
-      grid-column: 1 / -1;
-      padding: 0.7rem 0;
-      background: linear-gradient(90deg, var(--morado-dark) 0%, var(--morado) 100%);
-      color: var(--blanco);
-      border: none;
-      border-radius: 7px;
-      font-size: 1.1rem;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 2px 10px rgba(124,58,237,0.13);
-      margin-top: 0.5rem;
-      transition: background .2s;
-      letter-spacing: 0.5px;
-    }
-    .btn:hover {
-      background: linear-gradient(90deg, var(--morado) 0%, var(--morado-dark) 100%);
-      color: var(--blanco);
-    }
-    .results {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(2, auto);
-      gap: 1.2rem 2rem;
-      margin: 2rem 0 1.2rem 0;
-    }
-    .card {
-      background: var(--gris-claro);
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(124,58,237,0.08);
-      padding: 1rem 1.2rem;
-      min-width: 140px;
-      text-align: center;
-      border: 2px solid var(--morado);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .card h3 {
-      margin: 0 0 0.3rem 0;
-      color: var(--morado-dark);
-      font-size: 1.09rem;
-      font-weight: 700;
-    }
-    .card p {
-      font-size: 1.13rem;
-      font-weight: bold;
-      margin: 0;
-      color: var(--negro);
-      text-shadow: 0 1px 7px rgba(76,34,132,0.04);
-    }
-    .chart-container {
-      margin: 2rem auto 1rem auto;
-      max-width: 800px;
-      background: var(--blanco);
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(124,58,237,0.07);
-      padding: 1rem 2rem 2rem 2rem;
-    }
-    .chart-container h2 {
-      color: var(--morado-dark);
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    .table-container {
-      overflow-x: auto;
-      margin-bottom: 2rem;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--blanco);
-      margin-top: 1rem;
-    }
-    th, td {
-      border: 1px solid var(--gris-tabla);
-      padding: 0.5rem 0.8rem;
-      text-align: center;
-      font-size: 0.98rem;
-    }
-    th {
-      background: var(--morado-dark);
-      color: var(--blanco);
-      font-weight: 700;
-      border-top: 2px solid var(--morado);
-      border-bottom: 2px solid var(--morado);
-    }
-    tr:nth-child(even) td {
-      background: var(--gris-claro);
-    }
-    tr:nth-child(odd) td {
-      background: var(--blanco);
-    }
-    .footer {
-      position: fixed;
-      width: 100vw;
-      left: 0;
-      bottom: 0;
-      text-align: center;
-      background: linear-gradient(90deg, var(--morado-dark) 0%, var(--morado) 100%);
-      color: var(--blanco);
-      font-size: 0.95rem;
-      margin: 0;
-      opacity: 0.95;
-      padding: 0.6rem 0;
-      z-index: 1000;
-      text-shadow: 0 2px 10px rgba(76,34,132,0.14);
-    }
-    .report-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-      margin-top: 0.8rem;
-      margin-bottom: 1rem;
-    }
-    .report-btn, .whatsapp-btn {
-      background: var(--morado);
-      color: var(--blanco);
-      border: none;
-      border-radius: 6px;
-      font-weight: 700;
-      font-size: 1.04rem;
-      padding: 0.7rem 1.3rem;
-      cursor: pointer;
-      box-shadow: 0 2px 10px rgba(124,58,237,0.13);
-      letter-spacing: 0.7px;
-      transition: background .2s;
-      display: inline-block;
-      min-width: 180px;
-      margin: 0;
-    }
-    .report-btn:hover, .whatsapp-btn:hover {
-      background: var(--morado-dark);
-      color: var(--blanco);
-    }
-    .toggle-report {
-      background: var(--morado-dark);
-      color: var(--blanco);
-      border: none;
-      border-radius: 6px;
-      font-weight: 700;
-      font-size: 1.01rem;
-      padding: 0.5rem 1.2rem;
-      cursor: pointer;
-      margin-bottom: 1rem;
-      margin-left: auto;
-      margin-right: auto;
-      display: block;
-      box-shadow: 0 2px 10px rgba(76,34,132,0.10);
-      transition: background .2s;
-    }
-    .toggle-report.active {
-      background: var(--morado);
-    }
-    .report-options {
-      background: var(--gris-claro);
-      border-radius: 12px;
-      padding: 1.2rem;
-      margin-bottom: 2rem;
-      margin-top: 1.2rem;
-      box-shadow: 0 2px 8px rgba(124,58,237,0.07);
-      max-width: 770px;
-      margin-left: auto;
-      margin-right: auto;
-      display: block;
-    }
-    .report-options.hide {
-      display: none !important;
-    }
-    .report-options h4 {
-      color: var(--morado-dark);
-      margin-top: 0;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      font-size: 1.09rem;
-    }
-    .report-options .section {
-      margin-bottom: 0.8rem;
-    }
-    .report-options label {
-      margin-right: 1.1rem;
-      font-size: 1.01rem;
-      color: var(--negro);
-      font-weight: 500;
-      cursor: pointer;
-    }
-    .report-options .format-select {
-      margin-left: 1.2rem;
-      font-size: 1.02rem;
-      color: var(--morado-dark);
-      font-weight: 600;
-      border-radius: 6px;
-      border: 1px solid var(--morado);
-      background: var(--blanco);
-      padding: 0.25rem .7rem;
-    }
+    .topbar { position: fixed; top: 0; left: 0; width: 100vw; background: linear-gradient(90deg, var(--morado-dark) 0%, var(--morado) 100%); z-index: 1000; height: 80px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 12px rgba(124,58,237,0.12);}
+    .topbar-logo { height: 50px; margin-right: 1.2rem; border-radius: 10px; background: var(--blanco); box-shadow: 0 2px 8px rgba(76,34,132,0.10); padding: 4px;}
+    .container { background: var(--blanco); max-width: 900px; margin: 120px auto 2rem auto; border-radius: 15px; box-shadow: 0 4px 18px rgba(124,58,237,0.18); padding: 2rem 2.5rem;}
+    .header { display: flex; align-items: center; justify-content: center; margin-bottom: 2rem;}
+    .header img { height: 60px; margin-right: 1.2rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(124,58,237,0.12); background: var(--blanco); padding: 4px;}
+    .header-title { color: var(--morado-dark); font-size: 2.2rem; font-weight: 700; letter-spacing: 1px; text-shadow: 0 2px 10px rgba(76,34,132,0.06); margin: 0;}
+    h1 { display: none;}
+    form { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem 2rem; margin-bottom: 2rem;}
+    .form-row { display: flex; flex-direction: column; width: 100%;}
+    label { font-size: 1.05rem; margin-bottom: 0.35rem; color: var(--morado-dark); font-weight: 600;}
+    input, select { padding: 0.5rem; border: 1px solid var(--morado); border-radius: 6px; font-size: 1rem; background: var(--gris-claro); transition: border-color .2s; color: var(--negro); width: 100%; box-sizing: border-box;}
+    input:focus, select:focus { border-color: var(--negro); outline: none;}
+    .input-group { display: flex; align-items: center; width: 100%;}
+    .input-group input { flex: 1; min-width: 0; width: 100%;}
+    .input-group span { margin-left: 0.4rem; color: var(--morado-dark); font-weight: bold; font-size: 1rem;}
+    .btn { grid-column: 1 / -1; padding: 0.7rem 0; background: linear-gradient(90deg, var(--morado-dark) 0%, var(--morado) 100%); color: var(--blanco); border: none; border-radius: 7px; font-size: 1.1rem; font-weight: 700; cursor: pointer; box-shadow: 0 2px 10px rgba(124,58,237,0.13); margin-top: 0.5rem; transition: background .2s; letter-spacing: 0.5px;}
+    .btn:hover { background: linear-gradient(90deg, var(--morado) 0%, var(--morado-dark) 100%); color: var(--blanco);}
+    .results { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, auto); gap: 1.2rem 2rem; margin: 2rem 0 1.2rem 0;}
+    .card { background: var(--gris-claro); border-radius: 8px; box-shadow: 0 2px 8px rgba(124,58,237,0.08); padding: 1rem 1.2rem; min-width: 140px; text-align: center; border: 2px solid var(--morado); display: flex; flex-direction: column; align-items: center; justify-content: center;}
+    .card h3 { margin: 0 0 0.3rem 0; color: var(--morado-dark); font-size: 1.09rem; font-weight: 700;}
+    .card p { font-size: 1.13rem; font-weight: bold; margin: 0; color: var(--negro); text-shadow: 0 1px 7px rgba(76,34,132,0.04);}
+    .chart-container { margin: 2rem auto 1rem auto; max-width: 800px; background: var(--blanco); border-radius: 10px; box-shadow: 0 2px 10px rgba(124,58,237,0.07); padding: 1rem 2rem 2rem 2rem;}
+    .chart-container h2 { color: var(--morado-dark); text-align: center; margin-bottom: 1rem;}
+    .table-container { overflow-x: auto; margin-bottom: 2rem;}
+    table { width: 100%; border-collapse: collapse; background: var(--blanco); margin-top: 1rem;}
+    th, td { border: 1px solid var(--gris-tabla); padding: 0.5rem 0.8rem; text-align: center; font-size: 0.98rem;}
+    th { background: var(--morado-dark); color: var(--blanco); font-weight: 700; border-top: 2px solid var(--morado); border-bottom: 2px solid var(--morado);}
+    tr:nth-child(even) td { background: var(--gris-claro);}
+    tr:nth-child(odd) td { background: var(--blanco);}
+    .footer { position: fixed; width: 100vw; left: 0; bottom: 0; text-align: center; background: linear-gradient(90deg, var(--morado-dark) 0%, var(--morado) 100%); color: var(--blanco); font-size: 0.95rem; margin: 0; opacity: 0.95; padding: 0.6rem 0; z-index: 1000; text-shadow: 0 2px 10px rgba(76,34,132,0.14);}
+    .report-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 0.8rem; margin-bottom: 1rem;}
+    .report-btn, .whatsapp-btn { background: var(--morado); color: var(--blanco); border: none; border-radius: 6px; font-weight: 700; font-size: 1.04rem; padding: 0.7rem 1.3rem; cursor: pointer; box-shadow: 0 2px 10px rgba(124,58,237,0.13); letter-spacing: 0.7px; transition: background .2s; display: inline-block; min-width: 180px; margin: 0;}
+    .report-btn:hover, .whatsapp-btn:hover { background: var(--morado-dark); color: var(--blanco);}
+    .toggle-report { background: var(--morado-dark); color: var(--blanco); border: none; border-radius: 6px; font-weight: 700; font-size: 1.01rem; padding: 0.5rem 1.2rem; cursor: pointer; margin-bottom: 1rem; margin-left: auto; margin-right: auto; display: block; box-shadow: 0 2px 10px rgba(76,34,132,0.10); transition: background .2s;}
+    .toggle-report.active { background: var(--morado);}
+    .report-options { background: var(--gris-claro); border-radius: 12px; padding: 1.2rem; margin-bottom: 2rem; margin-top: 1.2rem; box-shadow: 0 2px 8px rgba(124,58,237,0.07); max-width: 770px; margin-left: auto; margin-right: auto; display: block;}
+    .report-options.hide { display: none !important;}
+    .report-options h4 { color: var(--morado-dark); margin-top: 0; font-weight: 700; margin-bottom: 1rem; font-size: 1.09rem;}
+    .report-options .section { margin-bottom: 0.8rem;}
+    .report-options label { margin-right: 1.1rem; font-size: 1.01rem; color: var(--negro); font-weight: 500; cursor: pointer;}
+    .report-options .format-select { margin-left: 1.2rem; font-size: 1.02rem; color: var(--morado-dark); font-weight: 600; border-radius: 6px; border: 1px solid var(--morado); background: var(--blanco); padding: 0.25rem .7rem;}
     @media (max-width: 850px) {
       .container { padding: 1rem; }
       .chart-container { padding: 1rem; }
@@ -412,11 +156,11 @@
       </div>
       <div class="form-row" id="montoDiv">
         <label for="monto">Monto del préstamo (L)</label>
-        <input type="number" id="monto" required min="0" step="100" value="10000">
+        <input type="number" id="monto" required min="0" step="1" value="10000">
       </div>
       <div class="form-row" id="primaDiv">
         <label for="prima">Prima inicial (L)</label>
-        <input type="number" id="prima" required min="0" step="100" value="0">
+        <input type="number" id="prima" required min="0" step="1" value="0">
       </div>
       <div class="form-row" id="tasaDiv">
         <label for="tasa">Tasa de interés <span style="color:var(--morado-dark);font-weight:700;">(%)</span></label>
@@ -427,7 +171,7 @@
       </div>
       <div class="form-row" id="plazoDiv">
         <label for="plazo">Plazo (número de cuotas)</label>
-        <input type="number" id="plazo" required min="0" step="1" value="12">
+        <input type="number" id="plazo" required min="1" step="1" value="12">
       </div>
       <div class="form-row" id="tipoCuotaDiv">
         <label for="tipoCuota">Tipo de cuota</label>
@@ -529,8 +273,8 @@
         </select>
       </div>
       <div class="report-actions">
-        <button id="reportBtn" class="report-btn">Descargar reporte</button>
-        <button id="whatsappBtn" class="whatsapp-btn">Compartir por WhatsApp</button>
+        <button id="reportBtn" class="report-btn" type="button">Descargar reporte</button>
+        <button id="whatsappBtn" class="whatsapp-btn" type="button">Compartir por WhatsApp</button>
       </div>
     </div>
 
@@ -575,7 +319,7 @@
     });
 
     function formatMoney(v) {
-      return "L " + v.toLocaleString("es-HN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return "L " + Number(v).toLocaleString("es-HN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     function convertirTasaPeriodo(tasa, tipoCuota, tipoTasa, tipoPrestamo) {
@@ -835,6 +579,7 @@
     document.getElementById('loanForm').addEventListener('submit', function(e){
       e.preventDefault();
 
+      // Captura TODOS los campos del formulario
       const nombreCliente = document.getElementById('nombreCliente').value;
       const dniCliente = document.getElementById('dniCliente').value;
       const ocupacionCliente = document.getElementById('ocupacionCliente').value;
@@ -849,6 +594,7 @@
       const lote = document.getElementById('lote').value;
       const mtsLote = document.getElementById('mtsLote').value;
 
+      // Calculadora
       const monto = parseFloat(document.getElementById('monto').value) || 0;
       const prima = parseFloat(document.getElementById('prima').value) || 0;
       const tasa = parseFloat(document.getElementById('tasa').value) || 0;
@@ -894,14 +640,21 @@
       document.getElementById('tablaContainer').style.display = '';
       renderTabla(tabla);
 
-      const datos = {
-        nombreCliente, dniCliente, ocupacionCliente, referenciaCliente,
-        telefonoCliente, emailCliente, direccionCliente,
-        nombreGestor, telefonoGestor,
-        lotificadora, bloque, lote, mtsLote,
-        monto, prima, tasa, tipoCuota, tipoTasa, tipoPrestamo, tipoInteres, plazo, capital, interes, cuota, total
+      // Mostrar opciones de reporte SIEMPRE después de calcular
+      document.getElementById('reportOptions').classList.remove('hide');
+      document.getElementById('toggleReport').classList.add('active');
+      document.getElementById('toggleReport').textContent = "Ocultar opciones de reporte";
+
+      window.__reporteDatos = {
+        datos: {
+          nombreCliente, dniCliente, ocupacionCliente, referenciaCliente,
+          telefonoCliente, emailCliente, direccionCliente,
+          nombreGestor, telefonoGestor,
+          lotificadora, bloque, lote, mtsLote,
+          monto, prima, tasa, tipoCuota, tipoTasa, tipoPrestamo, tipoInteres, plazo, capital, interes, cuota, total
+        },
+        tabla
       };
-      window.__reporteDatos = { datos, tabla };
     });
 
     document.getElementById('reportBtn').onclick = async function() {
@@ -942,8 +695,6 @@
         repTabla: document.getElementById('repTabla').checked,
       };
       const repFormato = document.getElementById('repFormato').value;
-
-      // Para firma
       const nombreFirma = rep.repNombreCliente ? (datos.nombreCliente || "") : "";
       const dniFirma = rep.repDNICliente ? (datos.dniCliente || "") : "";
 
@@ -1071,3 +822,6 @@
       }
       window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
     };
+  </script>
+</body>
+</html>
