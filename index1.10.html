@@ -412,11 +412,11 @@
       </div>
       <div class="form-row" id="montoDiv">
         <label for="monto">Monto del préstamo (L)</label>
-        <input type="number" id="monto" required min="0" step="1" value="10000">
+        <input type="number" id="monto" required min="0" step="100" value="10000">
       </div>
       <div class="form-row" id="primaDiv">
         <label for="prima">Prima inicial (L)</label>
-        <input type="number" id="prima" required min="0" step="1" value="0">
+        <input type="number" id="prima" required min="0" step="100" value="0">
       </div>
       <div class="form-row" id="tasaDiv">
         <label for="tasa">Tasa de interés <span style="color:var(--morado-dark);font-weight:700;">(%)</span></label>
@@ -858,13 +858,7 @@
       const tipoPrestamo = document.getElementById('tipoPrestamo').value;
       const tipoInteres = document.getElementById('tipoInteres').value;
 
-      // Permitir cualquier monto y cualquier prima
       const capital = monto - prima;
-      if (capital < 0) {
-        alert("La prima no puede ser mayor al monto del préstamo.");
-        return;
-      }
-
       let tasaPeriodo = convertirTasaPeriodo(tasa, tipoCuota, tipoTasa, tipoPrestamo);
 
       let interes, cuota, total, tabla;
@@ -1029,4 +1023,51 @@
         getDatosPrincipales(datos, rep).forEach(r=> html += `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`);
         html += "</table>";
         if (rep.repGraficas) {
-          html += "<h3>Gráficas</h3><p>[Las gráficas no
+          html += "<h3>Gráficas</h3><p>[Las gráficas no se incluyen en Word]</p>";
+        }
+        if (rep.repTabla) {
+          html += "<h3>Tabla de amortización</h3><table border='1' cellpadding='5'><tr><th>Periodo</th><th>Cuota (L)</th><th>Interés (L)</th><th>Capital (L)</th><th>Saldo (L)</th></tr>";
+          tabla.forEach(r=> html += `<tr><td>${r.periodo}</td><td>${formatMoney(r.cuota)}</td><td>${formatMoney(r.interes)}</td><td>${formatMoney(r.capitalPagado)}</td><td>${formatMoney(r.saldo)}</td></tr>`);
+          html += "</table>";
+        }
+        // Línea para firma
+        html += `<br><div style="width:400px;"><hr style="margin-top:40px;margin-bottom:5px;"><div style="text-align:center;">
+          Firma<br>${(nombreFirma ? nombreFirma : "")}${(dniFirma ? (" | DNI: " + dniFirma) : "")}
+        </div></div>`;
+        const blob = new Blob([`
+          <html><head><meta charset="utf-8"></head><body>${html}</body></html>
+        `], {type: "application/msword"});
+        saveAs(blob, "ReportePrestamo.doc");
+      }
+    };
+
+    document.getElementById('whatsappBtn').onclick = function() {
+      if (!window.__reporteDatos) {
+        alert('Primero calcula el préstamo antes de compartir por WhatsApp.');
+        return;
+      }
+      const datos = window.__reporteDatos.datos;
+      const tabla = window.__reporteDatos.tabla;
+      let msg = "Datos del préstamo:";
+      msg += "\n" + (datos.nombreCliente ? "Cliente: " + datos.nombreCliente : "");
+      msg += (datos.dniCliente ? " | DNI: " + datos.dniCliente : "");
+      msg += (datos.telefonoCliente ? "\nTel: " + datos.telefonoCliente : "");
+      msg += (datos.emailCliente ? "\nEmail: " + datos.emailCliente : "");
+      msg += (datos.direccionCliente ? "\nDirección: " + datos.direccionCliente : "");
+      msg += (datos.nombreGestor ? "\nGestor: " + datos.nombreGestor : "");
+      msg += (datos.telefonoGestor ? " | Tel: " + datos.telefonoGestor : "");
+      msg += (datos.lotificadora ? "\nLotificadora: " + datos.lotificadora : "");
+      msg += (datos.bloque ? " | Bloque: " + datos.bloque : "");
+      msg += (datos.lote ? " | Lote: " + datos.lote : "");
+      msg += (datos.mtsLote ? " | Mts² Lote: " + datos.mtsLote : "");
+      msg += `\nMonto: ${formatMoney(datos.monto)}\nPrima: ${formatMoney(datos.prima)}\nValor financiado: ${formatMoney(datos.capital)}\nTasa: ${datos.tasa}%\nTipo de tasa: ${datos.tipoTasa}\nTipo de cuota: ${datos.tipoCuota}\nTipo de préstamo: ${datos.tipoPrestamo}\nTipo de interés: ${datos.tipoInteres}\nPlazo: ${datos.plazo}\nInterés total: ${formatMoney(datos.interes)}\nCuota por periodo: ${formatMoney(datos.cuota)}\nTotal a pagar: ${formatMoney(datos.total)}`;
+      msg += "\n\nTabla de amortización:\nPeriodo | Cuota (L) | Interés (L) | Capital (L) | Saldo (L)\n";
+      if (tabla.length <= 30) {
+        tabla.forEach(r => {
+          msg += `${r.periodo} | ${formatMoney(r.cuota)} | ${formatMoney(r.interes)} | ${formatMoney(r.capitalPagado)} | ${formatMoney(r.saldo)}\n`;
+        });
+      } else {
+        msg += "Demasiados periodos para tabla completa.\n";
+      }
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+    };
