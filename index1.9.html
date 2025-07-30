@@ -1,3 +1,4 @@
+```html name=index.html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -458,15 +459,15 @@
       <h4>Generar reporte y descargar:</h4>
       <div class="section">
         <strong>Datos del cliente:</strong><br>
-        <label><input type="checkbox" id="repNombreCliente" checked> Nombre del cliente</label>
-        <label><input type="checkbox" id="repTelefonoCliente" checked> Teléfono del cliente</label>
-        <label><input type="checkbox" id="repEmailCliente" checked> Email</label>
-        <label><input type="checkbox" id="repDireccionCliente" checked> Dirección</label>
+        <label><input type="checkbox" id="repNombreCliente"> Nombre del cliente</label>
+        <label><input type="checkbox" id="repTelefonoCliente"> Teléfono del cliente</label>
+        <label><input type="checkbox" id="repEmailCliente"> Email</label>
+        <label><input type="checkbox" id="repDireccionCliente"> Dirección</label>
       </div>
       <div class="section">
         <strong>Datos del gestor:</strong><br>
-        <label><input type="checkbox" id="repNombreGestor" checked> Nombre del gestor</label>
-        <label><input type="checkbox" id="repTelefonoGestor" checked> Teléfono del gestor</label>
+        <label><input type="checkbox" id="repNombreGestor"> Nombre del gestor</label>
+        <label><input type="checkbox" id="repTelefonoGestor"> Teléfono del gestor</label>
       </div>
       <div class="section">
         <strong>Datos del préstamo:</strong><br>
@@ -774,12 +775,12 @@
 
     function getDatosPrincipales(datos, rep) {
       const arr = [];
-      if (rep.repNombreCliente) arr.push(["Nombre del cliente", datos.nombreCliente]);
-      if (rep.repTelefonoCliente) arr.push(["Teléfono del cliente", datos.telefonoCliente]);
-      if (rep.repEmailCliente) arr.push(["Email", datos.emailCliente]);
-      if (rep.repDireccionCliente) arr.push(["Dirección", datos.direccionCliente]);
-      if (rep.repNombreGestor) arr.push(["Nombre del gestor de crédito", datos.nombreGestor]);
-      if (rep.repTelefonoGestor) arr.push(["Teléfono del gestor", datos.telefonoGestor]);
+      if (rep.repNombreCliente) arr.push(["Nombre del cliente", datos.nombreCliente || ""]);
+      if (rep.repTelefonoCliente) arr.push(["Teléfono del cliente", datos.telefonoCliente || ""]);
+      if (rep.repEmailCliente) arr.push(["Email", datos.emailCliente || ""]);
+      if (rep.repDireccionCliente) arr.push(["Dirección", datos.direccionCliente || ""]);
+      if (rep.repNombreGestor) arr.push(["Nombre del gestor de crédito", datos.nombreGestor || ""]);
+      if (rep.repTelefonoGestor) arr.push(["Teléfono del gestor", datos.telefonoGestor || ""]);
       if (rep.repMonto) arr.push(["Monto (L)", formatMoney(datos.monto)]);
       if (rep.repPrima) arr.push(["Prima (L)", formatMoney(datos.prima)]);
       if (rep.repValorFinanciado) arr.push(["Valor financiado (L)", formatMoney(datos.capital)]);
@@ -795,7 +796,75 @@
       return arr;
     }
 
+    document.getElementById('loanForm').addEventListener('submit', function(e){
+      e.preventDefault();
+
+      const nombreCliente = document.getElementById('nombreCliente').value;
+      const telefonoCliente = document.getElementById('telefonoCliente').value;
+      const emailCliente = document.getElementById('emailCliente').value;
+      const direccionCliente = document.getElementById('direccionCliente').value;
+      const nombreGestor = document.getElementById('nombreGestor').value;
+      const telefonoGestor = document.getElementById('telefonoGestor').value;
+
+      const monto = parseFloat(document.getElementById('monto').value) || 0;
+      const prima = parseFloat(document.getElementById('prima').value) || 0;
+      const tasa = parseFloat(document.getElementById('tasa').value) || 0;
+      let plazo = parseInt(document.getElementById('plazo').value) || 0;
+      const tipoCuota = document.getElementById('tipoCuota').value;
+      const tipoTasa = document.getElementById('tipoTasa').value;
+      const tipoPrestamo = document.getElementById('tipoPrestamo').value;
+      const tipoInteres = document.getElementById('tipoInteres').value;
+
+      const capital = monto - prima;
+      let tasaPeriodo = convertirTasaPeriodo(tasa, tipoCuota, tipoTasa, tipoPrestamo);
+
+      let interes, cuota, total, tabla;
+      if (tipoPrestamo === "Abierto") {
+        plazo = 0;
+        tasaPeriodo = tasa;
+        ({interes, cuota, total, tabla} = calcularAbierto(capital, tasaPeriodo, tipoInteres));
+      } else if (tipoPrestamo === "Hipotecario") {
+        if (plazo === 0) {
+          alert("El plazo no puede ser cero para préstamo hipotecario.");
+          return;
+        }
+        ({interes, cuota, total, tabla} = calcularHipotecario(capital, tasa, plazo, tipoInteres));
+      } else {
+        if (plazo === 0) {
+          alert("El plazo no puede ser cero para préstamo global.");
+          return;
+        }
+        ({interes, cuota, total, tabla} = calcularGlobal(capital, tasaPeriodo, plazo, tipoInteres));
+      }
+
+      document.getElementById('results').style.display = '';
+      document.getElementById('montoShow').textContent = formatMoney(monto);
+      document.getElementById('primaShow').textContent = formatMoney(prima);
+      document.getElementById('valorFinanciado').textContent = formatMoney(capital);
+      document.getElementById('interesTotal').textContent = formatMoney(interes);
+      document.getElementById('cuotaPeriodo').textContent = formatMoney(cuota);
+      document.getElementById('totalPagar').textContent = formatMoney(total);
+
+      document.getElementById('chartContainer').style.display = '';
+      renderCharts(tabla);
+
+      document.getElementById('tablaContainer').style.display = '';
+      renderTabla(tabla);
+
+      document.getElementById('whatsappBtn').style.display = '';
+      const datos = {
+        nombreCliente, telefonoCliente, emailCliente, direccionCliente,
+        nombreGestor, telefonoGestor,
+        monto, prima, tasa, tipoCuota, tipoTasa, tipoPrestamo, tipoInteres, plazo, capital, interes, cuota, total
+      };
+      window.__reporteDatos = { datos, tabla };
+    });
+
     document.getElementById('reportBtn').onclick = async function() {
+      if (!window.__reporteDatos) {
+        alert('Primero calcula el préstamo antes de generar el reporte.');
+        return;
+      }
       const datos = window.__reporteDatos.datos;
       const tabla = window.__reporteDatos.tabla;
       const rep = {
@@ -868,7 +937,7 @@
           });
         }
         // Línea para firma
-        let lastY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 30 : 250;
+        let lastY = doc.internal.pageSize.getHeight() - 35;
         doc.setLineWidth(0.5);
         doc.line(45, lastY, 150, lastY);
         doc.setFontSize(12);
@@ -912,3 +981,5 @@
   </script>
 </body>
 </html>
+```
+
