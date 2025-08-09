@@ -825,7 +825,7 @@
         html += "</table>";
         //if (rep.repGraficas) {
           //html += "<h3>Gráficas</h3><p>[Las gráficas no se incluyen en Word]</p>";
-        }
+        //}
         if (rep.repTabla) {
           html += "<h3>Tabla de amortización</h3><table border='1' cellpadding='5'><tr><th>Periodo</th><th>Cuota (L)</th><th>Interés (L)</th><th>Capital (L)</th><th>Saldo (L)</th></tr>";
           tabla.forEach(r=> html += `<tr><td>${r.periodo}</td><td>${formatMoney(r.cuota)}</td><td>${formatMoney(r.interes)}</td><td>${formatMoney(r.capitalPagado)}</td><td>${formatMoney(r.saldo)}</td></tr>`);
