@@ -293,7 +293,7 @@
       </div>
       <div class="section">
         <strong>Datos del préstamo:</strong><br>
-        <label><input type="checkbox" id="repLogo" checked> Logo y nombre de empresa</label>
+        <label><input type="checkbox" id="repLogo" checked> Nombre de empresa</label>
         <label><input type="checkbox" id="repMonto" checked> Monto</label>
         <label><input type="checkbox" id="repPrima" checked> Prima</label>
         <label><input type="checkbox" id="repValorFinanciado" checked> Valor financiado</label>
@@ -749,7 +749,7 @@
         const doc = new jsPDF();
         let y = 18;
         if (rep.repLogo) {
-          doc.addImage("https://i.imgur.com/0VIiYb6.png", "PNG", 15, y, 25, 17);
+          //doc.addImage("https://i.imgur.com/0VIiYb6.png", "PNG", 15, y, 25, 17);
           doc.setFontSize(18);
           doc.text("DEMO - CALCULADORA DE PRESTAMOS", 45, y+12);
           y += 22;
@@ -808,7 +808,7 @@
       else if (repFormato === "excel" || repFormato === "csv") {
         const wb = XLSX.utils.book_new();
         if (rep.repLogo) {
-          XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["FinanMorado - Soluciones Financieras"]]), "Empresa");
+          XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["DEMO - CALCULADORA DE PRESTAMOS"]]), "Empresa");
         }
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Campo","Valor"], ...getDatosPrincipales(datos, rep)]), "Datos");
         if (rep.repTabla) {
@@ -819,12 +819,12 @@
       }
       else if (repFormato === "word") {
         let html = "<h2>DEMO - CALCULADORA DE PRESTAMOS</h2>";
-        if (rep.repLogo) html = `<img src="https://github.com/rimedhn/rmpos/blob/main/LOGO%20RMPOS.jpg?raw=true" style="height:50px;"><br>` + html;
+        if (rep.repLogo) //html = `<img src="https://github.com/rimedhn/rmpos/blob/main/LOGO%20RMPOS.jpg?raw=true" style="height:50px;"><br>` + html;
         html += "<h3>Datos del préstamo</h3><table border='1' cellpadding='5'><tr><th>Campo</th><th>Valor</th></tr>";
         getDatosPrincipales(datos, rep).forEach(r=> html += `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`);
         html += "</table>";
-        if (rep.repGraficas) {
-          html += "<h3>Gráficas</h3><p>[Las gráficas no se incluyen en Word]</p>";
+        //if (rep.repGraficas) {
+          //html += "<h3>Gráficas</h3><p>[Las gráficas no se incluyen en Word]</p>";
         }
         if (rep.repTabla) {
           html += "<h3>Tabla de amortización</h3><table border='1' cellpadding='5'><tr><th>Periodo</th><th>Cuota (L)</th><th>Interés (L)</th><th>Capital (L)</th><th>Saldo (L)</th></tr>";
