@@ -818,8 +818,8 @@
         XLSX.writeFile(wb, "ReportePrestamo." + ext);
       }
       else if (repFormato === "word") {
-        let html = "<h2>FinanMorado - Soluciones Financieras</h2>";
-        if (rep.repLogo) html = `<img src="https://i.imgur.com/0VIiYb6.png" style="height:50px;"><br>` + html;
+        let html = "<h2>DEMO - CALCULADORA DE PRESTAMOS</h2>";
+        if (rep.repLogo) html = `<img src="https://github.com/rimedhn/rmpos/blob/main/LOGO%20RMPOS.jpg?raw=true" style="height:50px;"><br>` + html;
         html += "<h3>Datos del préstamo</h3><table border='1' cellpadding='5'><tr><th>Campo</th><th>Valor</th></tr>";
         getDatosPrincipales(datos, rep).forEach(r=> html += `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`);
         html += "</table>";
