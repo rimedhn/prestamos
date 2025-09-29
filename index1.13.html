@@ -313,7 +313,7 @@
       </div>
       <div class="section">
         <strong>Gráficas y tabla:</strong><br>
-        <div><label>Gráficas</label><input type="checkbox" id="repGraficas" checked></div>
+        <label><input type="checkbox" id="repGraficas" checked>Gráficas</label>
         <label><input type="checkbox" id="repTabla" checked> Tabla de amortización</label><br><br>
         <span style="margin-left:2rem;">Formato:</span>
         <select id="repFormato" class="format-select">
@@ -322,7 +322,18 @@
           <option value="csv">CSV</option>
           <option value="word">Word</option>
         </select>
+      </div>      
+      <div class="section">
+        <strong>Descargar formato:</strong><br>
+        <span style="margin-left:2rem;">Formato:</span>
+        <select id="repFormato" class="format-select">
+          <option value="pdf" selected>PDF</option>
+          <option value="excel">Excel</option>
+          <option value="csv">CSV</option>
+          <option value="word">Word</option>
+        </select>
       </div>
+      
       <div class="report-actions">
         <button id="reportBtn" class="report-btn" type="button">Descargar reporte</button>
         <button id="whatsappBtn" class="whatsapp-btn" type="button">Compartir por WhatsApp</button>
