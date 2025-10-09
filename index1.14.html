@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculadora de Préstamos</title>
+  <link rel="icon" type="image/png" href="https://github.com/rimedhn/rmpos/blob/main/LOGO%20RMPOS.jpg?raw=true">
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <style>
+    /* ... [Mantener CSS original, no se repite aquí por brevedad] ... */
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <img src="https://github.com/rimedhn/rmpos/blob/main/LOGO%20RMPOS.jpg?raw=true" alt="Logo superior" class="topbar-logo">
+  </div>
+  <div class="container">
+    <!-- ... [Mantener el resto del HTML] ... -->
+  </div>
+  <div class="footer">Desarrollado para GitHub. © 2024</div>
+
+  <script>
+    // Mostrar/ocultar campos según tipo de préstamo
+    const tipoPrestamoSelect = document.getElementById('tipoPrestamo');
+    const tipoTasaDiv = document.getElementById('tipoTasaDiv');
+    const tipoInteresDiv = document.getElementById('tipoInteresDiv');
+    const tipoCuotaDiv = document.getElementById('tipoCuotaDiv');
+    const plazoDiv = document.getElementById('plazoDiv');
+    tipoPrestamoSelect.addEventListener('change', function(){
+      const tipo = tipoPrestamoSelect.value;
+      if (tipo === 'Hipotecario') {
+        tipoTasaDiv.style.display = '';
+        tipoCuotaDiv.style.display = '';
+        plazoDiv.style.display = '';
+        tipoInteresDiv.style.display = '';
+      } else if (tipo === 'Abierto') {
+        tipoTasaDiv.style.display = 'none';
+        tipoCuotaDiv.style.display = '';
+        plazoDiv.style.display = 'none';
+        tipoInteresDiv.style.display = '';
+      } else {
+        tipoTasaDiv.style.display = '';
+        tipoCuotaDiv.style.display = '';
+        plazoDiv.style.display = '';
+        tipoInteresDiv.style.display = '';
+      }
+    });
+
+    function formatMoney(v) {
+      return "L " + Number(v).toLocaleString("es-HN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function convertirTasaPeriodo(tasa, tipoCuota, tipoTasa, tipoPrestamo) {
+      if (tipoPrestamo === 'Hipotecario') {
+        return tasa / 12;
+      }
+      if (tipoPrestamo === 'Abierto') {
+        return tasa;
+      }
+      if (tipoTasa === 'Global') {
+        switch (tipoCuota) {
+          case 'Diaria': return tasa / 365;
+          case 'Semanal': return tasa / 52;
+          case 'Quincenal': return tasa / 24;
+          case 'Mensual': return tasa / 12;
+        }
+      }
+      return tasa;
+    }
+
+    function calcularAbierto(capital, tasaPeriodo, tipoInteres) {
+      const interes = tasaPeriodo === 0 ? 0 : capital * (tasaPeriodo / 100);
+      const cuota = interes;
+      const total = capital + interes;
+      const tabla = [{
+        periodo: 1,
+        cuota: cuota,
+        interes: interes,
+        capitalPagado: 0,
+        saldo: capital
+      }];
+      return {interes, cuota, total, tabla};
+    }
+
+    // AJUSTADO
+    function calcularGlobal(capital, tasaPeriodo, plazo, tipoInteres, tipoTasa) {
+      const tabla = [];
+      let saldo = capital;
+      let cuota, interesTotal = 0, total;
+
+      if (tasaPeriodo === 0) {
+        cuota = capital / plazo;
+        for (let i = 1; i <= plazo; i++) {
+          tabla.push({
+            periodo: i,
+            cuota,
+            interes: 0,
+            capitalPagado: cuota,
+            saldo: saldo - cuota
+          });
+          saldo -= cuota;
+        }
+        interesTotal = 0;
+        total = capital;
+        return {interes: interesTotal, cuota, total, tabla};
+      }
+
+      // AJUSTE PARA TASA GLOBAL
+      if (tipoTasa === "Global") {
+        interesTotal = capital * (tasaPeriodo / 100);
+        cuota = interesTotal + (capital / plazo);
+        total = capital + interesTotal;
+        saldo = capital;
+        for (let i = 1; i <= plazo; i++) {
+          const interes = interesTotal / plazo;
+          const capitalPagado = capital / plazo;
+          tabla.push({
+            periodo: i,
+            cuota,
+            interes,
+            capitalPagado,
+            saldo: saldo - capitalPagado
+          });
+          saldo -= capitalPagado;
+        }
+        return {interes: interesTotal, cuota, total, tabla};
+      }
+
+      // MODO POR PERIODO
+      if (tipoInteres === "Simple") {
+        interesTotal = capital * (tasaPeriodo / 100) * plazo;
+        cuota = (capital + interesTotal) / plazo;
+        for (let i = 1; i <= plazo; i++) {
+          const interes = capital * (tasaPeriodo / 100);
+          const capitalPagado = cuota - interes;
+          tabla.push({
+            periodo: i,
+            cuota,
+            interes,
+            capitalPagado,
+            saldo: saldo - capitalPagado
+          });
+          saldo -= capitalPagado;
+        }
+        total = capital + interesTotal;
+      } else {
+        const tasa = tasaPeriodo / 100;
+        cuota = plazo === 0 ? 0 : (capital * tasa) / (1 - Math.pow(1 + tasa, -plazo));
+        saldo = capital;
+        interesTotal = 0;
+        for (let i = 1; i <= plazo; i++) {
+          const interes = saldo * tasa;
+          const capitalPagado = cuota - interes;
+          tabla.push({
+            periodo: i,
+            cuota,
+            interes,
+            capitalPagado,
+            saldo: saldo - capitalPagado
+          });
+          saldo -= capitalPagado;
+          interesTotal += interes;
+        }
+        total = cuota * plazo;
+      }
+      return {interes: interesTotal, cuota, total, tabla};
+    }
+
+    function calcularHipotecario(capital, tasaAnual, plazo, tipoInteres) {
+      const plazoMeses = plazo;
+      const tasaMensual = (tasaAnual / 12) / 100;
+      let cuota, interesTotal = 0, total;
+      const tabla = [];
+      let saldo = capital;
+      if (tasaAnual === 0) {
+        cuota = capital / plazoMeses;
+        for (let i = 1; i <= plazoMeses; i++) {
+          tabla.push({
+            periodo: i,
+            cuota,
+            interes: 0,
+            capitalPagado: cuota,
+            saldo: saldo - cuota
+          });
+          saldo -= cuota;
+        }
+        interesTotal = 0;
+        total = capital;
+        return {interes: interesTotal, cuota, total, tabla};
+      }
+      cuota = plazoMeses === 0 ? 0 : (capital * tasaMensual) / (1 - Math.pow(1 + tasaMensual, -plazoMeses));
+      for (let i = 1; i <= plazoMeses; i++) {
+        const interes = saldo * tasaMensual;
+        const capitalPagado = cuota - interes;
+        tabla.push({
+          periodo: i,
+          cuota,
+          interes,
+          capitalPagado,
+          saldo: saldo - capitalPagado
+        });
+        saldo -= capitalPagado;
+        interesTotal += interes;
+      }
+      total = cuota * plazoMeses;
+      return {interes: interesTotal, cuota, total, tabla};
+    }
+
+    function renderTabla(tabla) {
+      let html = `<tr>
+        <th>Periodo</th>
+        <th>Cuota (L)</th>
+        <th>Interés (L)</th>
+        <th>Capital (L)</th>
+        <th>Saldo (L)</th>
+      </tr>`;
+      for (const row of tabla) {
+        html += `<tr>
+          <td>${row.periodo}</td>
+          <td>${formatMoney(row.cuota)}</td>
+          <td>${formatMoney(row.interes)}</td>
+          <td>${formatMoney(row.capitalPagado)}</td>
+          <td>${formatMoney(row.saldo >= 0 ? row.saldo : 0)}</td>
+        </tr>`;
+      }
+      document.getElementById('tablaAmortizacion').innerHTML = html;
+    }
+
+    let saldoChart, cuotaChart;
+    function renderCharts(tabla) {
+      const periodos = tabla.map(r => r.periodo);
+      const saldos = tabla.map(r => r.saldo >= 0 ? r.saldo : 0);
+      const intereses = tabla.map(r => r.interes);
+      const capitales = tabla.map(r => r.capitalPagado);
+
+      if (saldoChart) saldoChart.destroy();
+      saldoChart = new Chart(document.getElementById('saldoChart'), {
+        type: 'line',
+        data: {
+          labels: periodos,
+          datasets: [{
+            label: 'Saldo (L)',
+            data: saldos,
+            borderColor: '#7c3aed',
+            backgroundColor: 'rgba(76,34,132,0.12)',
+            fill: true,
+            tension: 0.1,
+            pointRadius: 3
+          }]
+        },
+        options: {
+          plugins: {legend: {display: false}},
+          scales: {
+            x: {title: {display: true, text: 'Periodo'}},
+            y: {title: {display: true, text: 'Saldo (L)'}}
+          }
+        }
+      });
+
+      if (cuotaChart) cuotaChart.destroy();
+      cuotaChart = new Chart(document.getElementById('cuotaChart'), {
+        type: 'bar',
+        data: {
+          labels: periodos,
+          datasets: [
+            {
+              label: 'Interés (L)',
+              data: intereses,
+              backgroundColor: '#222'
+            },
+            {
+              label: 'Capital (L)',
+              data: capitales,
+              backgroundColor: '#7c3aed'
+            }
+          ]
+        },
+        options: {
+          plugins: {legend: {display: true}},
+          scales: {
+            x: {title: {display: true, text: 'Periodo'}},
+            y: {title: {display: true, text: 'Monto (L)'}},
+            y: {stacked: true}
+          }
+        }
+      });
+    }
+
+    document.getElementById('toggleReport').onclick = function () {
+      const opts = document.getElementById('reportOptions');
+      opts.classList.toggle('hide');
+      this.classList.toggle('active');
+      this.textContent = opts.classList.contains('hide') ? "Mostrar opciones de reporte" : "Ocultar opciones de reporte";
+    };
+
+    function getDatosPrincipales(datos, rep) {
+      const arr = [];
+      if (rep.repNombreCliente && datos.nombreCliente) arr.push(["Nombre del cliente", datos.nombreCliente]);
+      if (rep.repDNICliente && datos.dniCliente) arr.push(["DNI del cliente", datos.dniCliente]);
+      if (rep.repOcupacionCliente && datos.ocupacionCliente) arr.push(["Ocupación", datos.ocupacionCliente]);
+      if (rep.repReferenciaCliente && datos.referenciaCliente) arr.push(["Referencia", datos.referenciaCliente]);
+      if (rep.repTelefonoCliente && datos.telefonoCliente) arr.push(["Teléfono del cliente", datos.telefonoCliente]);
+      if (rep.repEmailCliente && datos.emailCliente) arr.push(["Email", datos.emailCliente]);
+      if (rep.repDireccionCliente && datos.direccionCliente) arr.push(["Dirección", datos.direccionCliente]);
+      if (rep.repObservacionesCliente && datos.observacionesCliente) arr.push(["Observaciones", datos.observacionesCliente]);
+      if (rep.repNombreGestor && datos.nombreGestor) arr.push(["Nombre del gestor de crédito", datos.nombreGestor]);
+      if (rep.repTelefonoGestor && datos.telefonoGestor) arr.push(["Teléfono del gestor", datos.telefonoGestor]);
+      if (rep.repLotificadora && datos.lotificadora) arr.push(["Lotificadora", datos.lotificadora]);
+      if (rep.repBloque && datos.bloque) arr.push(["Bloque", datos.bloque]);
+      if (rep.repLote && datos.lote) arr.push(["Lote", datos.lote]);
+      if (rep.repMtsLote && datos.mtsLote) arr.push(["Mts² Lote", datos.mtsLote]);
+      if (rep.repMonto) arr.push(["Monto (L)", formatMoney(datos.monto)]);
+      if (rep.repPrima) arr.push(["Prima (L)", formatMoney(datos.prima)]);
+      if (rep.repValorFinanciado) arr.push(["Valor financiado (L)", formatMoney(datos.capital)]);
+      if (rep.repTasa) arr.push(["Tasa de interés (%)", datos.tasa+"%"]);
+      if (rep.repTipoTasa) arr.push(["Tipo de tasa", datos.tipoTasa]);
+      if (rep.repTipoCuota) arr.push(["Tipo de cuota", datos.tipoCuota]);
+      if (rep.repTipoPrestamo) arr.push(["Tipo de préstamo", datos.tipoPrestamo]);
+      if (rep.repTipoInteres) arr.push(["Tipo de interés", datos.tipoInteres]);
+      if (rep.repPlazo) arr.push(["Plazo", datos.plazo || "N/A"]);
+      if (rep.repInteresTotal) arr.push(["Interés total (L)", formatMoney(datos.interes)]);
+      if (rep.repCuotaPeriodo) arr.push(["Cuota por periodo (L)", formatMoney(datos.cuota)]);
+      if (rep.repTotalPagar) arr.push(["Total a pagar (L)", formatMoney(datos.total)]);
+      return arr;
+    }
+
+    document.getElementById('loanForm').addEventListener('submit', function(e){
+      e.preventDefault();
+
+      // Captura TODOS los campos del formulario
+      const nombreCliente = document.getElementById('nombreCliente').value;
+      const dniCliente = document.getElementById('dniCliente').value;
+      const ocupacionCliente = document.getElementById('ocupacionCliente').value;
+      const referenciaCliente = document.getElementById('referenciaCliente').value;
+      const telefonoCliente = document.getElementById('telefonoCliente').value;
+      const emailCliente = document.getElementById('emailCliente').value;
+      const direccionCliente = document.getElementById('direccionCliente').value;
+      const observacionesCliente = document.getElementById('observacionesCliente').value;
+      const nombreGestor = document.getElementById('nombreGestor').value;
+      const telefonoGestor = document.getElementById('telefonoGestor').value;
+      const lotificadora = document.getElementById('lotificadora').value;
+      const bloque = document.getElementById('bloque').value;
+      const lote = document.getElementById('lote').value;
+      const mtsLote = document.getElementById('mtsLote').value;
+
+      // Calculadora
+      const monto = parseFloat(document.getElementById('monto').value) || 0;
+      const prima = parseFloat(document.getElementById('prima').value) || 0;
+      const tasa = parseFloat(document.getElementById('tasa').value) || 0;
+      let plazo = parseInt(document.getElementById('plazo').value) || 0;
+      const tipoCuota = document.getElementById('tipoCuota').value;
+      const tipoTasa = document.getElementById('tipoTasa').value;
+      const tipoPrestamo = document.getElementById('tipoPrestamo').value;
+      const tipoInteres = document.getElementById('tipoInteres').value;
+
+      const capital = monto - prima;
+      let tasaPeriodo = convertirTasaPeriodo(tasa, tipoCuota, tipoTasa, tipoPrestamo);
+
+      let interes, cuota, total, tabla;
+      if (tipoPrestamo === "Abierto") {
+        plazo = 0;
+        tasaPeriodo = tasa;
+        ({interes, cuota, total, tabla} = calcularAbierto(capital, tasaPeriodo, tipoInteres));
+      } else if (tipoPrestamo === "Hipotecario") {
+        if (plazo === 0) {
+          alert("El plazo no puede ser cero para préstamo hipotecario.");
+          return;
+        }
+        ({interes, cuota, total, tabla} = calcularHipotecario(capital, tasa, plazo, tipoInteres));
+      } else {
+        if (plazo === 0) {
+          alert("El plazo no puede ser cero para préstamo global.");
+          return;
+        }
+        ({interes, cuota, total, tabla} = calcularGlobal(capital, tasaPeriodo, plazo, tipoInteres, tipoTasa));
+      }
+
+      document.getElementById('results').style.display = '';
+      document.getElementById('montoShow').textContent = formatMoney(monto);
+      document.getElementById('primaShow').textContent = formatMoney(prima);
+      document.getElementById('valorFinanciado').textContent = formatMoney(capital);
+      document.getElementById('interesTotal').textContent = formatMoney(interes);
+      document.getElementById('cuotaPeriodo').textContent = formatMoney(cuota);
+      document.getElementById('totalPagar').textContent = formatMoney(total);
+
+      document.getElementById('chartContainer').style.display = '';
+      renderCharts(tabla);
+
+      document.getElementById('tablaContainer').style.display = '';
+      renderTabla(tabla);
+
+      document.getElementById('reportOptions').classList.remove('hide');
+      document.getElementById('toggleReport').classList.add('active');
+      document.getElementById('toggleReport').textContent = "Ocultar opciones de reporte";
+
+      window.__reporteDatos = {
+        datos: {
+          nombreCliente, dniCliente, ocupacionCliente, referenciaCliente,
+          telefonoCliente, emailCliente, direccionCliente, observacionesCliente,
+          nombreGestor, telefonoGestor,
+          lotificadora, bloque, lote, mtsLote,
+          monto, prima, tasa, tipoCuota, tipoTasa, tipoPrestamo, tipoInteres, plazo, capital, interes, cuota, total
+        },
+        tabla
+      };
+    });
+
+    // --- PDF compacto ---
+    document.getElementById('reportBtn').onclick = async function() {
+      if (!window.__reporteDatos) {
+        alert('Primero calcula el préstamo antes de generar el reporte.');
+        return;
+      }
+      const datos = window.__reporteDatos.datos;
+      const tabla = window.__reporteDatos.tabla;
+      const rep = {
+        repLogo: document.getElementById('repLogo').checked,
+        repNombreCliente: document.getElementById('repNombreCliente').checked,
+        repDNICliente: document.getElementById('repDNICliente').checked,
+        repOcupacionCliente: document.getElementById('repOcupacionCliente').checked,
+        repReferenciaCliente: document.getElementById('repReferenciaCliente').checked,
+        repTelefonoCliente: document.getElementById('repTelefonoCliente').checked,
+        repEmailCliente: document.getElementById('repEmailCliente').checked,
+        repDireccionCliente: document.getElementById('repDireccionCliente').checked,
+        repObservacionesCliente: document.getElementById('repObservacionesCliente').checked,
+        repNombreGestor: document.getElementById('repNombreGestor').checked,
+        repTelefonoGestor: document.getElementById('repTelefonoGestor').checked,
+        repLotificadora: document.getElementById('repLotificadora').checked,
+        repBloque: document.getElementById('repBloque').checked,
+        repLote: document.getElementById('repLote').checked,
+        repMtsLote: document.getElementById('repMtsLote').checked,
+        repMonto: document.getElementById('repMonto').checked,
+        repPrima: document.getElementById('repPrima').checked,
+        repValorFinanciado: document.getElementById('repValorFinanciado').checked,
+        repTasa: document.getElementById('repTasa').checked,
+        repTipoTasa: document.getElementById('repTipoTasa').checked,
+        repTipoCuota: document.getElementById('repTipoCuota').checked,
+        repTipoPrestamo: document.getElementById('repTipoPrestamo').checked,
+        repTipoInteres: document.getElementById('repTipoInteres').checked,
+        repPlazo: document.getElementById('repPlazo').checked,
+        repInteresTotal: document.getElementById('repInteresTotal').checked,
+        repCuotaPeriodo: document.getElementById('repCuotaPeriodo').checked,
+        repTotalPagar: document.getElementById('repTotalPagar').checked,
+        repGraficas: document.getElementById('repGraficas').checked,
+        repTabla: document.getElementById('repTabla').checked,
+      };
+      const repFormato = document.getElementById('repFormato').value;
+      const nombreFirma = rep.repNombreCliente && datos.nombreCliente ? datos.nombreCliente : "";
+      const dniFirma = rep.repDNICliente && datos.dniCliente ? datos.dniCliente : "";
+
+      if (repFormato === "pdf") {
+        const { jsPDF } = window.jspdf;
+        // Modo compacto: orientación portrait y fuente/tamaño reducido
+        const doc = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: "a4"
+        });
+        let y = 14;
+        // Logo y título compactos
+        if (rep.repLogo) {
+          doc.addImage("https://github.com/rimedhn/rmpos/blob/main/LOGO%20RMPOS.jpg?raw=true", "JPEG", 12, y-2, 16, 16);
+          doc.setFontSize(14);
+          doc.text("DEMO - CALCULADORA DE PRESTAMOS", 30, y+6);
+          y += 12;
+        }
+        doc.setFontSize(10);
+        doc.text("Datos del préstamo:", 12, y);
+        y += 5;
+        const datosArray = getDatosPrincipales(datos, rep);
+
+        doc.autoTable({
+          startY: y,
+          theme: 'grid',
+          head: [["Campo", "Valor"]],
+          body: datosArray,
+          margin: {left: 10, right: 10},
+          styles: {
+            fontSize: 8,
+            cellPadding: 1.5,
+            overflow: 'linebreak',
+            lineColor: [124, 58, 237],
+            lineWidth: 0.1
+          },
+          headStyles: {
+            fillColor: [76, 34, 132],
+            textColor: 255,
+            fontSize: 8,
+            cellPadding: 1.2,
+          },
+          tableWidth: 'auto',
+        });
+        y = doc.lastAutoTable.finalY + 2;
+
+        // Si graficas, ponerlas compactas en la misma hoja si hay espacio (solo si plazo < 20)
+        if (rep.repGraficas && tabla.length <= 20) {
+          doc.setFontSize(9);
+          doc.text("Gráfica de Saldo", 12, y+2);
+          const saldoImg = document.getElementById('saldoChart').toDataURL("image/png");
+          doc.addImage(saldoImg, "PNG", 12, y+3, 90, 30);
+          doc.text("Gráfica de Cuota/Interés", 105, y+2);
+          const cuotaImg = document.getElementById('cuotaChart').toDataURL("image/png");
+          doc.addImage(cuotaImg, "PNG", 105, y+3, 90, 30);
+          y += 35;
+        } else if (rep.repGraficas) {
+          doc.addPage();
+          doc.setFontSize(9);
+          doc.text("Gráfica de Saldo", 12, 20);
+          const saldoImg = document.getElementById('saldoChart').toDataURL("image/png");
+          doc.addImage(saldoImg, "PNG", 12, 23, 180, 55);
+          doc.text("Gráfica de Cuota/Interés", 12, 82);
+          const cuotaImg = document.getElementById('cuotaChart').toDataURL("image/png");
+          doc.addImage(cuotaImg, "PNG", 12, 85, 180, 55);
+        }
+
+        // Tabla: compacta si plazo <= 24, si no, paginar
+        if (rep.repTabla) {
+          let tablaHead = [["Periodo", "Cuota (L)", "Interés (L)", "Capital (L)", "Saldo (L)"]];
+          let tablaBody = tabla.map(r => [
+            r.periodo, formatMoney(r.cuota), formatMoney(r.interes), formatMoney(r.capitalPagado), formatMoney(r.saldo)
+          ]);
+          if (tabla.length <= 24) {
+            doc.setFontSize(10);
+            doc.text("Tabla de amortización:", 12, y+4);
+            doc.autoTable({
+              startY: y+6,
+              theme: 'grid',
+              head: tablaHead,
+              body: tablaBody,
+              margin: {left: 10, right: 10},
+              styles: {fontSize: 7, cellPadding: 1, overflow: 'linebreak'},
+              headStyles: {fillColor: [76, 34, 132], textColor: 255, fontSize: 7, cellPadding: 0.8},
+              tableWidth: 'auto',
+              pageBreak: 'avoid'
+            });
+            y = doc.lastAutoTable.finalY;
+          } else {
+            // Muchas filas: paginar
+            doc.addPage();
+            doc.setFontSize(10);
+            doc.text("Tabla de amortización:", 12, 18);
+            doc.autoTable({
+              startY: 20,
+              theme: 'grid',
+              head: tablaHead,
+              body: tablaBody,
+              margin: {left: 10, right: 10},
+              styles: {fontSize: 7, cellPadding: 1, overflow: 'linebreak'},
+              headStyles: {fillColor: [76, 34, 132], textColor: 255, fontSize: 7, cellPadding: 0.8},
+              tableWidth: 'auto',
+              pageBreak: 'auto'
+            });
+          }
+        }
+
+        // Firma compacta
+        let pageHeight = doc.internal.pageSize.getHeight();
+        let lastY = pageHeight - 16;
+        doc.setLineWidth(0.5);
+        doc.line(45, lastY, 150, lastY);
+        doc.setFontSize(10);
+        doc.text("Firma", 95, lastY + 6, { align: "center" });
+        if (nombreFirma || dniFirma) {
+          doc.setFontSize(9);
+          doc.text(
+            `${nombreFirma}${dniFirma ? " | DNI: " + dniFirma : ""}`,
+            95, lastY + 12,
+            { align: "center" }
+          );
+        }
+        doc.save("ReportePrestamo.pdf");
+      }
+      // ... [Excel, Word, WhatsApp se mantienen igual] ...
+      else if (repFormato === "excel" || repFormato === "csv") {
+        const wb = XLSX.utils.book_new();
+        if (rep.repLogo) {
+          XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["DEMO - CALCULADORA DE PRESTAMOS"]]), "Empresa");
+        }
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Campo","Valor"], ...getDatosPrincipales(datos, rep)]), "Datos");
+        if (rep.repTabla) {
+          XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(getTableForExport(tabla)), "Tabla");
+        }
+        const ext = repFormato === "excel" ? "xlsx" : "csv";
+        XLSX.writeFile(wb, "ReportePrestamo." + ext);
+      }
+      else if (repFormato === "word") {
+        let html = "<h2>DEMO - CALCULADORA DE PRESTAMOS</h2>";
+        if (rep.repLogo) //html = `<img src="https://github.com/rimedhn/rmpos/blob/main/LOGO%20RMPOS.jpg?raw=true" style="height:50px;"><br>` + html;
+        html += "<h3>Datos del préstamo</h3><table border='1' cellpadding='5'><tr><th>Campo</th><th>Valor</th></tr>";
+        getDatosPrincipales(datos, rep).forEach(r=> html += `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`);
+        html += "</table>";
+        if (rep.repTabla) {
+          html += "<h3>Tabla de amortización</h3><table border='1' cellpadding='5'><tr><th>Periodo</th><th>Cuota (L)</th><th>Interés (L)</th><th>Capital (L)</th><th>Saldo (L)</th></tr>";
+          tabla.forEach(r=> html += `<tr><td>${r.periodo}</td><td>${formatMoney(r.cuota)}</td><td>${formatMoney(r.interes)}</td><td>${formatMoney(r.capitalPagado)}</td><td>${formatMoney(r.saldo)}</td></tr>`);
+          html += "</table>";
+        }
+        html += `<br><div style="width:400px;"><hr style="margin-top:40px;margin-bottom:5px;"><div style="text-align:center;">
+          Firma<br>${(nombreFirma ? nombreFirma : "")}${(dniFirma ? (" | DNI: " + dniFirma) : "")}
+        </div></div>`;
+        const blob = new Blob([`
+          <html><head><meta charset="utf-8"></head><body>${html}</body></html>
+        `], {type: "application/msword"});
+        saveAs(blob, "ReportePrestamo.doc");
+      }
+    };
+
+    function getTableForExport(tabla) {
+      const cols = ["Periodo", "Cuota (L)", "Interés (L)", "Capital (L)", "Saldo (L)"];
+      const rows = tabla.map(r => [r.periodo, formatMoney(r.cuota), formatMoney(r.interes), formatMoney(r.capitalPagado), formatMoney(r.saldo)]);
+      return [cols, ...rows];
+    }
+
+    document.getElementById('whatsappBtn').onclick = function() {
+      if (!window.__reporteDatos) {
+        alert('Primero calcula el préstamo antes de compartir por WhatsApp.');
+        return;
+      }
+      const datos = window.__reporteDatos.datos;
+      const tabla = window.__reporteDatos.tabla;
+      let msg = "Datos del préstamo:";
+      if (datos.nombreCliente) msg += "\nCliente: " + datos.nombreCliente;
+      if (datos.dniCliente) msg += " | DNI: " + datos.dniCliente;
+      if (datos.telefonoCliente) msg += "\nTel: " + datos.telefonoCliente;
+      if (datos.emailCliente) msg += "\nEmail: " + datos.emailCliente;
+      if (datos.direccionCliente) msg += "\nDirección: " + datos.direccionCliente;
+      if (datos.nombreGestor) msg += "\nGestor: " + datos.nombreGestor;
+      if (datos.telefonoGestor) msg += " | Tel: " + datos.telefonoGestor;
+      if (datos.lotificadora) msg += "\nLotificadora: " + datos.lotificadora;
+      if (datos.bloque) msg += " | Bloque: " + datos.bloque;
+      if (datos.lote) msg += " | Lote: " + datos.lote;
+      if (datos.mtsLote) msg += " | Mts² Lote: " + datos.mtsLote;
+      if (datos.observacionesCliente) msg += "\nObservaciones: " + datos.observacionesCliente;
+      msg += `\nMonto: ${formatMoney(datos.monto)}\nPrima: ${formatMoney(datos.prima)}\nValor financiado: ${formatMoney(datos.capital)}\nTasa: ${datos.tasa}%\nTipo de tasa: ${datos.tipoTasa}\nTipo de cuota: ${datos.tipoCuota}\nTipo de préstamo: ${datos.tipoPrestamo}\nTipo de interés: ${datos.tipoInteres}\nPlazo: ${datos.plazo}\nInterés total: ${formatMoney(datos.interes)}\nCuota por periodo: ${formatMoney(datos.cuota)}\nTotal a pagar: ${formatMoney(datos.total)}`;
+      msg += "\n\nTabla de amortización:\nPeriodo | Cuota (L) | Interés (L) | Capital (L) | Saldo (L)\n";
+      if (tabla.length <= 30) {
+        tabla.forEach(r => {
+          msg += `${r.periodo} | ${formatMoney(r.cuota)} | ${formatMoney(r.interes)} | ${formatMoney(r.capitalPagado)} | ${formatMoney(r.saldo)}\n`;
+        });
+      } else {
+        msg += "Demasiados periodos para tabla completa.\n";
+      }
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+    };
+  </script>
+</body>
+</html>
